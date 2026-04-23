@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ms. K's Corner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-soft: #fdfcfd;
+            --purple-light: #f3e5f5;
+            --purple-main: #ce93d8;
+            --mint-main: #b2dfdb;
+            --mint-dark: #80cbc4;
+            --text-dark: #4a4a4a;
+            --emergency: #ff8a80;
+            --white: #ffffff;
+            --reschedule: #ffd54f;
+            --notice: #e1bee7;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: var(--bg-soft);
+            color: var(--text-dark);
+            margin: 0; padding: 20px;
+            display: flex; justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app-card {
+            width: 100%; max-width: 500px;
+            background: var(--white);
+            border-radius: 30px; padding: 40px;
+            box-shadow: 0 15px 35px rgba(206, 147, 216, 0.1);
+            transition: max-width 0.3s ease;
+        }
+
+        .app-card.wide {
+            max-width: 1000px;
+            align-self: flex-start;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        h1 { font-family: 'Nunito', sans-serif; font-size: 2.4rem; color: var(--purple-main); text-align: center; margin: 0; }
+        p.subtitle { text-align: center; font-size: 1.1rem; margin-bottom: 30px; color: #888; }
+
+        .btn {
+            padding: 12px 20px; border-radius: 15px; border: none;
+            font-family: 'Nunito', sans-serif; font-weight: 700;
+            font-size: 1rem; cursor: pointer; transition: 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .btn-purple { background: var(--purple-light); color: var(--text-dark); }
+        .btn-mint { background: var(--mint-main); color: var(--text-dark); }
+        .btn-yellow { background: var(--reschedule); color: var(--text-dark); }
+        .btn-active { background: var(--purple-main) !important; color: white !important; }
+        .btn:disabled { background: #e0e0e0 !important; color: #9e9e9e !important; cursor: not-allowed; }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; }
+        input, select, textarea {
+            width: 100%; padding: 12px; border-radius: 12px;
+            border: 2px solid var(--purple-light); font-size: 1rem; font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            border-color: var(--purple-main);
+        }
+
+        .banner {
+            padding: 15px; border-radius: 12px; margin-bottom: 20px; font-weight: 600; display: none;
+            text-align: center;
+        }
+        .emergency-banner { background: #ffebee; border: 2px solid var(--emergency); color: #c62828; }
+        .success-banner { background: var(--purple-light); border: 2px solid var(--purple-main); color: #6a1b9a; }
+        .msk-request-banner { background: var(--purple-light); border: 2px solid var(--purple-main); color: #6a1b9a; }
+
+        .hidden { display: none !important; }
+
+        hr { border: none; border-top: 2px solid var(--purple-light); margin: 30px 0; }
+
+        /* Calendar Styles */
+        .week-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .day-col h3 { text-align: center; color: var(--purple-main); font-size: 1.1rem; }
+        
+        .time-slot {
+            background: var(--purple-light); margin-bottom: 10px;
+            padding: 15px 5px; border-radius: 12px;
+            text-align: center; font-weight: 600; cursor: pointer;
+            border: 2px solid transparent; font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        .time-slot:hover:not(.booked) { border-color: var(--mint-dark); background: white; }
+        
+        .time-slot.booked { 
+            background: #eeeeee !important; 
+            color: #bbbbbb !important; 
+            cursor: not-allowed !important; 
+            text-decoration: line-through !important;
+            pointer-events: none;
+            border: none;
+        }
+
+        .counselor-booked {
+            background: var(--mint-main) !important;
+            color: var(--text-dark) !important;
+            border: 2px solid var(--mint-dark) !important;
+            cursor: pointer !important;
+        }
+
+        .requested {
+            background: var(--reschedule) !important;
+            color: var(--text-dark) !important;
+            cursor: not-allowed !important;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: var(--white);
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%; max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; color: var(--purple-main); }
+        .close { font-size: 28px; font-weight: bold; cursor: pointer; }
+
+        .request-card {
+            background: var(--purple-light); padding: 20px;
+            border-radius: 15px; margin-bottom: 15px;
+            border-left: 8px solid var(--purple-main);
+        }
+        .status-badge { font-weight: 800; text-transform: uppercase; font-size: 0.8rem; padding: 4px 8px; border-radius: 5px; background: rgba(255,255,255,0.5); }
+        .status-Approved { color: #2e7d32; }
+        .status-Denied { color: #c62828; }
+        .status-Rescheduled { color: #f57f17; }
+
+        @media (max-width: 800px) { .week-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="app-card">
+        <h1>Ms. K's Corner</h1>
+        <p class="subtitle">A safe space for learning and growth</p>
+        
+        <div id="status" class="banner"></div>
+
+        <div id="login-section">
+            <button id="google-login-btn" class="btn btn-purple btn-active">Sign in with Google</button>
+        </div>
+
+        <div id="app-section" class="hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <span id="user-email" style="font-weight: 600;"></span>
+                    <span id="user-role" style="font-size: 0.8rem; color: #666; display: block;"></span>
+                </div>
+                <button id="logout-btn" class="btn btn-yellow" style="width: auto; margin-bottom: 0;">Logout</button>
+            </div>
+            
+            <hr>
+            
+            <!-- Student View -->
+            <div id="student-view" class="hidden">
+                <section id="view-student-calendar">
+                    <h2>Select an Available Time</h2>
+                    <div class="week-grid" id="weekGrid"></div>
+                </section>
+
+                <section id="view-booking-form" class="hidden">
+                    <div class="form-box" style="max-width: 600px; margin: 0 auto;">
+                        <button class="btn btn-purple" onclick="showSubView('student-calendar')" style="margin-bottom:20px; width: auto;">← Back to Times</button>
+                        <h2 id="selected-time-display">Request Meeting</h2>
+                        
+                        <div id="msk-notif" class="banner msk-request-banner">
+                            👋 <b>MESSAGE FROM MS. K:</b> <span id="msk-msg-text"></span>
+                        </div>
+
+                        <div id="freq-warning" class="banner emergency-banner">
+                            🛑 LIMIT REACHED: You have already requested 2 sessions this week. Please see Ms. K in person for emergencies.
+                        </div>
+
+                        <div class="form-group">
+                            <label>Class you are missing</label>
+                            <input type="text" id="classMissed" placeholder="e.g. 11th Grade History">
+                        </div>
+                        <div class="form-group">
+                            <label>Reason for meeting</label>
+                            <select id="visitReason" onchange="toggleOther(this.value)">
+                                <option value="College/Career">College/Career Planning</option>
+                                <option value="Academic Support">Academic Support</option>
+                                <option value="Personal Stress">Personal Stress</option>
+                                <option value="Other">Other...</option>
+                            </select>
+                            <input type="text" id="otherReason" class="hidden" placeholder="Please specify..." style="margin-top:10px;">
+                        </div>
+                        <button id="submitBtn" class="btn btn-mint" style="width:100%; font-size:1.2rem; margin-top: 10px;" onclick="finalizeBooking()">Submit Request</button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Counselor View -->
+            <div id="counselor-view" class="hidden">
+                <h2 style="color: var(--purple-main);">Counselor Dashboard</h2>
+                
+                <div style="background: #fdf4ff; border: 2px dashed var(--purple-main); padding: 20px; border-radius: 20px; margin-bottom: 30px;">
+                    <h3>Request a Student</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" id="reqStudentEmail" placeholder="Student Email" style="flex: 1;">
+                        <input type="text" id="reqStudentMsg" placeholder="Message" style="flex: 2;">
+                        <button class="btn btn-purple" style="width: auto;" onclick="addMskRequest()">Send Request</button>
+                    </div>
+                    <div id="active-summons" style="font-size: 0.9rem; color: #666;"></div>
+                </div>
+
+                <h3>Weekly Schedule</h3>
+                <div class="week-grid" id="counselorWeekGrid" style="margin-bottom: 40px;"></div>
+
+                <h3>Pending Appointment Requests</h3>
+                <div id="admin-content"></div>
+            </div>
+        </div>
+
+        <!-- Appointment Modal -->
+        <div id="apptModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Manage Appointment</h2>
+                    <span class="close" onclick="closeModal()">&times;</span>
+                </div>
+                <div id="modalBody">
+                    <input type="hidden" id="modalApptId">
+                    <div class="form-group" style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label>Day</label>
+                            <select id="modalDay" onchange="updateModalTimeOptions()"></select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label>Time</label>
+                            <select id="modalTime"></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Student Name</label>
+                        <input type="text" id="modalStudentName" placeholder="Full Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Student Email</label>
+                        <input type="email" id="modalStudentEmail" placeholder="Email Address">
+                    </div>
+                    <div class="form-group">
+                        <label>Class Missing</label>
+                        <input type="text" id="modalClass" placeholder="e.g. 10th Grade Math">
+                    </div>
+                    <div class="form-group">
+                        <label>Reason</label>
+                        <textarea id="modalReason" rows="2"></textarea>
+                    </div>
+                    <button class="btn btn-mint" onclick="saveModalAppt()">Save Appointment</button>
+                    <button id="modalDeleteBtn" class="btn btn-purple" style="background:#ffcdd2; margin-top:10px;" onclick="deleteModalAppt()">Delete Appointment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        var appointments = [];
+        var summons = [];
+        var tempSlot = null;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAWPigy-7c7SHzUJHotgElrmLHXawIqb7s",
+            authDomain: "kscorner-832ef.firebaseapp.com",
+            projectId: "kscorner-832ef",
+            storageBucket: "kscorner-832ef.firebasestorage.app",
+            messagingSenderId: "266584672219",
+            appId: "1:266584672219:web:62dce51012ae4d1e33c9fe",
+            measurementId: "G-04MTEJ2B0Q"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        const loginSection = document.getElementById('login-section');
+        const appSection = document.getElementById('app-section');
+        const userEmailSpan = document.getElementById('user-email');
+        const userRoleSpan = document.getElementById('user-role');
+        const statusDiv = document.getElementById('status');
+        const studentView = document.getElementById('student-view');
+        const counselorView = document.getElementById('counselor-view');
+        const counselorEmails = ['lkamara@uppublicschools.org', 'siegel.benjamin1@gmail.com'];
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        const times = ["8:30 AM", "9:10 AM", "9:50 AM", "10:30 AM", "11:10 AM", "11:50 AM", "12:30 PM", "1:10 PM", "1:50 PM", "2:30 PM", "3:10 PM"];
+
+        window.showSubView = (viewId) => {
+            if (viewId === 'student-calendar') {
+                document.getElementById('view-student-calendar').classList.remove('hidden');
+                document.getElementById('view-booking-form').classList.add('hidden');
+                renderCalendar();
+            } else if (viewId === 'booking-form') {
+                document.getElementById('view-student-calendar').classList.add('hidden');
+                document.getElementById('view-booking-form').classList.remove('hidden');
+            }
+        };
+
+        window.toggleOther = (val) => { 
+            document.getElementById('otherReason').classList.toggle('hidden', val !== 'Other'); 
+        };
+
+        function showStatus(msg, isError = false) {
+            statusDiv.textContent = msg;
+            statusDiv.className = isError ? 'banner emergency-banner' : 'banner success-banner';
+            statusDiv.style.display = 'block';
+            setTimeout(() => statusDiv.style.display = 'none', 5000);
+        }
+
+        async function fetchData() {
+            const user = auth.currentUser;
+            if (!user) return;
+            const token = await user.getIdToken();
+            
+            try {
+                const response = await fetch('/api/appointments', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                appointments = await response.json();
+
+                const summonResponse = await fetch('/api/summons', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                summons = await summonResponse.json();
+
+                if (counselorEmails.includes(user.email)) {
+                    renderAdmin();
+                    renderCounselorCalendar();
+                    renderSummons();
+                } else {
+                    renderCalendar();
+                    checkStudentSummons();
+                }
+            } catch (err) {
+                console.error("Error fetching data:", err);
+            }
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('weekGrid');
+            grid.innerHTML = '';
+            const user = auth.currentUser;
+            days.forEach(day => {
+                const col = document.createElement('div');
+                col.className = 'day-col';
+                col.innerHTML = `<h3>${day}</h3>`;
+                times.forEach(t => {
+                    const appt = appointments.find(a => a.day === day && a.time === t && (a.status === 'Approved' || a.email === user.email));
+                    const isBooked = appt && appt.status === 'Approved';
+                    const isRequested = appt && appt.status === 'Pending' && appt.email === user.email;
+
+                    const slot = document.createElement('div');
+                    slot.className = `time-slot ${isBooked ? 'booked' : ''} ${isRequested ? 'requested' : ''}`;
+                    slot.innerText = isRequested ? 'Requested' : t;
+                    
+                    if (!isBooked && !isRequested) {
+                        slot.onclick = () => {
+                            tempSlot = { day, time: t };
+                            showSubView('booking-form');
+                            document.getElementById('selected-time-display').innerText = `Request: ${day} at ${t}`;
+                        };
+                    }
+                    col.appendChild(slot);
+                });
+                grid.appendChild(col);
+            });
+        }
+
+        function checkStudentSummons() {
+            const user = auth.currentUser;
+            const summon = summons.find(s => s.studentEmail.toLowerCase() === user.email.toLowerCase());
+            const mskNotif = document.getElementById('msk-notif');
+            if (summon) {
+                mskNotif.style.display = 'block';
+                document.getElementById('msk-msg-text').innerText = summon.message;
+            } else {
+                mskNotif.style.display = 'none';
+            }
+        }
+
+        window.finalizeBooking = async () => {
+            const cls = document.getElementById('classMissed').value;
+            const reason = document.getElementById('visitReason').value === 'Other' ? document.getElementById('otherReason').value : document.getElementById('visitReason').value;
+
+            if (!cls) return alert("Please specify the class you are missing.");
+
+            const user = auth.currentUser;
+            const token = await user.getIdToken();
+
+            try {
+                const response = await fetch('/api/book-appointment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ 
+                        name: user.displayName || user.email.split('@')[0],
+                        cls, 
+                        reason, 
+                        day: tempSlot.day, 
+                        time: tempSlot.time 
+                    })
+                });
+
+
+                if (response.ok) {
+                    showStatus("Appointment request sent!");
+                    showSubView('student-calendar');
+                    fetchData();
+                } else {
+                    const err = await response.json();
+                    showStatus(err.message, true);
+                }
+            } catch (err) {
+                showStatus(err.message, true);
+            }
+        };
+
+        function renderAdmin() {
+            const container = document.getElementById('admin-content');
+            const pending = appointments.filter(a => a.status === 'Pending');
+            container.innerHTML = pending.length === 0 ? '<p style="text-align:center; padding:40px;">No pending requests found.</p>' : '';
+            pending.sort((a,b) => b.timestamp - a.timestamp).forEach(a => {
+                const card = document.createElement('div');
+                card.className = 'request-card';
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between;">
+                        <div><strong>${a.name} (${a.email})</strong></div>
+                        <div><strong>${a.day} @ ${a.time}</strong></div>
+                    </div>
+                    <p>Reason: ${a.reason}</p>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-mint" style="width:auto;" onclick="updateApptStatus('${a.id}', 'Approved')">Approve</button>
+                        <button class="btn btn-yellow" style="width:auto;" onclick="updateApptStatus('${a.id}', 'Rescheduled')">Reschedule</button>
+                        <button class="btn btn-purple" style="background:#ffcdd2; width:auto;" onclick="updateApptStatus('${a.id}', 'Denied')">Deny</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderCounselorCalendar() {
+            const grid = document.getElementById('counselorWeekGrid');
+            grid.innerHTML = '';
+            days.forEach(day => {
+                const col = document.createElement('div');
+                col.className = 'day-col';
+                col.innerHTML = `<h3>${day}</h3>`;
+                times.forEach(t => {
+                    const appt = appointments.find(a => a.day === day && a.time === t && a.status === 'Approved');
+                    const slot = document.createElement('div');
+                    slot.className = `time-slot ${appt ? 'counselor-booked' : ''}`;
+                    slot.style.fontSize = '0.75rem';
+                    slot.style.padding = '10px 2px';
+                    
+                    slot.onclick = () => openApptModal(day, t, appt);
+
+                    if (appt) {
+                        slot.innerHTML = `<div>${t}<br><strong>${appt.name}</strong></div>`;
+                        slot.title = `${appt.name} - ${appt.reason}`;
+                    } else {
+                        slot.innerText = t;
+                    }
+                    col.appendChild(slot);
+                });
+                grid.appendChild(col);
+            });
+        }
+
+        window.openApptModal = (day, time, appt) => {
+            const modal = document.getElementById('apptModal');
+            
+            // Populate Days
+            const daySelect = document.getElementById('modalDay');
+            daySelect.innerHTML = days.map(d => `<option value="${d}">${d}</option>`).join('');
+            daySelect.value = day;
+
+            if (appt) {
+                document.getElementById('modalTitle').innerText = `Edit Appointment`;
+                document.getElementById('modalApptId').value = appt.id;
+                document.getElementById('modalStudentName').value = appt.name;
+                document.getElementById('modalStudentEmail').value = appt.email;
+                document.getElementById('modalClass').value = appt.cls || '';
+                document.getElementById('modalReason').value = appt.reason || '';
+                document.getElementById('modalDeleteBtn').style.display = 'block';
+            } else {
+                document.getElementById('modalTitle').innerText = `New Appointment`;
+                document.getElementById('modalApptId').value = '';
+                document.getElementById('modalStudentName').value = '';
+                document.getElementById('modalStudentEmail').value = '';
+                document.getElementById('modalClass').value = '';
+                document.getElementById('modalReason').value = '';
+                document.getElementById('modalDeleteBtn').style.display = 'none';
+            }
+            
+            updateModalTimeOptions(time);
+            modal.style.display = 'block';
+        };
+
+        window.updateModalTimeOptions = (selectedTime) => {
+            const day = document.getElementById('modalDay').value;
+            const apptId = document.getElementById('modalApptId').value;
+            const timeSelect = document.getElementById('modalTime');
+            const currentTime = selectedTime || timeSelect.value;
+
+            timeSelect.innerHTML = times.map(t => {
+                // Check if this slot is taken by ANOTHER appointment
+                const isTaken = appointments.some(a => 
+                    a.day === day && 
+                    a.time === t && 
+                    a.id !== apptId && 
+                    (a.status === 'Approved' || a.status === 'Pending')
+                );
+                return `<option value="${t}" ${isTaken ? 'disabled style="color: #ccc;"' : ''}>${t}${isTaken ? ' (Occupied)' : ''}</option>`;
+            }).join('');
+
+            if (currentTime) timeSelect.value = currentTime;
+        };
+
+        window.closeModal = () => {
+            document.getElementById('apptModal').style.display = 'none';
+        };
+
+        window.saveModalAppt = async () => {
+            const id = document.getElementById('modalApptId').value;
+            const data = {
+                name: document.getElementById('modalStudentName').value,
+                email: document.getElementById('modalStudentEmail').value,
+                cls: document.getElementById('modalClass').value,
+                reason: document.getElementById('modalReason').value,
+                day: document.getElementById('modalDay').value,
+                time: document.getElementById('modalTime').value
+            };
+
+            if (!data.name || !data.email) return alert("Name and Email are required.");
+
+            const user = auth.currentUser;
+            const token = await user.getIdToken();
+            const url = id ? `/api/edit-appointment/${id}` : '/api/manual-appointment';
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    closeModal();
+                    fetchData();
+                } else {
+                    const err = await response.json();
+                    alert(err.message);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        window.deleteModalAppt = async () => {
+            const id = document.getElementById('modalApptId').value;
+            if (!id || !confirm("Delete this appointment?")) return;
+
+            const user = auth.currentUser;
+            const token = await user.getIdToken();
+
+            try {
+                const response = await fetch(`/api/update-appointment/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status: 'Deleted' }) // Or implement a true DELETE
+                });
+
+                if (response.ok) {
+                    closeModal();
+                    fetchData();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        window.updateApptStatus = async (id, status) => {
+            const user = auth.currentUser;
+            const token = await user.getIdToken();
+            await fetch(`/api/update-appointment/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ status })
+            });
+            fetchData();
+        };
+
+        window.addMskRequest = async () => {
+            const studentEmail = document.getElementById('reqStudentEmail').value.trim();
+            const message = document.getElementById('reqStudentMsg').value.trim();
+            if (!studentEmail || !message) return alert("Enter both email and message.");
+
+            const user = auth.currentUser;
+            const token = await user.getIdToken();
+
+            await fetch('/api/send-summon', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ studentEmail, message })
+            });
+            document.getElementById('reqStudentEmail').value = '';
+            document.getElementById('reqStudentMsg').value = '';
+            fetchData();
+        };
+
+        function renderSummons() {
+            const container = document.getElementById('active-summons');
+            container.innerHTML = '<b>Active Requests:</b> ' + (summons.length === 0 ? 'None' : '');
+            summons.forEach(s => {
+                const span = document.createElement('span');
+                span.style = "display:inline-block; background:white; padding:5px 10px; border-radius:10px; margin:5px; border:1px solid #ce93d8;";
+                span.innerHTML = `${s.studentEmail} <button onclick="deleteSummon('${s.id}')" style="border:none; background:none; cursor:pointer; color:red;">&times;</button>`;
+                container.appendChild(span);
+            });
+        }
+
+        window.deleteSummon = async (id) => {
+            const user = auth.currentUser;
+            const token = await user.getIdToken();
+            await fetch(`/api/delete-summon/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            fetchData();
+        };
+
+        // Auth State Listener
+        onAuthStateChanged(auth, async (user) => {
+            const card = document.querySelector('.app-card');
+            if (user) {
+                card.classList.add('wide');
+                loginSection.classList.add('hidden');
+                appSection.classList.remove('hidden');
+                userEmailSpan.textContent = user.email;
+                
+                const role = counselorEmails.includes(user.email) ? 'Counselor' : 'Student';
+                userRoleSpan.textContent = `Role: ${role}`;
+
+                if (role === 'Counselor') {
+                    counselorView.classList.remove('hidden');
+                    studentView.classList.add('hidden');
+                } else {
+                    studentView.classList.remove('hidden');
+                    counselorView.classList.add('hidden');
+                    showSubView('student-calendar');
+                }
+                fetchData();
+            } else {
+                card.classList.remove('wide');
+                loginSection.classList.remove('hidden');
+                appSection.classList.add('hidden');
+                counselorView.classList.add('hidden');
+                studentView.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('google-login-btn').onclick = async () => {
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (err) {
+                showStatus(err.message, true);
+            }
+        };
+
+        document.getElementById('logout-btn').onclick = () => signOut(auth);
+    </script>
+</body>
+</html>
