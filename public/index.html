@@ -344,12 +344,34 @@
                 const response = await fetch('/api/appointments', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                appointments = await response.json();
+                if (response.ok) {
+                    const data = await response.json();
+                    appointments = Array.isArray(data) ? data : [];
+                } else {
+                    try {
+                        const errData = await response.json();
+                        console.error("Failed to fetch appointments:", errData.message);
+                    } catch (e) {
+                        console.error("Failed to fetch appointments: Unknown error");
+                    }
+                    appointments = [];
+                }
 
                 const summonResponse = await fetch('/api/summons', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                summons = await summonResponse.json();
+                if (summonResponse.ok) {
+                    const data = await summonResponse.json();
+                    summons = Array.isArray(data) ? data : [];
+                } else {
+                    try {
+                        const errData = await summonResponse.json();
+                        console.error("Failed to fetch summons:", errData.message);
+                    } catch (e) {
+                        console.error("Failed to fetch summons: Unknown error");
+                    }
+                    summons = [];
+                }
 
                 if (counselorEmails.includes(user.email)) {
                     renderAdmin();
@@ -361,6 +383,8 @@
                 }
             } catch (err) {
                 console.error("Error fetching data:", err);
+                appointments = [];
+                summons = [];
             }
         }
 
